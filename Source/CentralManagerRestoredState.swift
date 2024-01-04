@@ -53,14 +53,17 @@ public struct CentralManagerRestoredState: CentralManagerRestoredStateType {
     public var services: [Service] {
         let objects = restoredStateData[CBCentralManagerRestoredStateScanServicesKey] as? [AnyObject]
         guard let arrayOfAnyObjects = objects else { return [] }
-
-        #if swift(>=4.1)
+        
+#if swift(>=4.1)
         let cbServices = arrayOfAnyObjects.compactMap { $0 as? CBService }
-        #else
+#else
         let cbServices = arrayOfAnyObjects.flatMap { $0 as? CBService }
-        #endif
-
-        return cbServices.map { Service(peripheral: centralManager.retrievePeripheral(for: $0.peripheral),
-                                        service: $0) }
+#endif
+        
+        return cbServices.compactMap {
+            guard let cbPeripheral = $0.peripheral else { return nil }
+            let peripheral = centralManager.retrievePeripheral(for: cbPeripheral)
+            return Service(peripheral: peripheral, service: $0)
+        }
     }
 }
